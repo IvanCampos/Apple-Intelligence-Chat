@@ -242,9 +242,10 @@ struct ContentView: View {
     private func stopStreaming() {
         streamingTask?.cancel()
     }
-    
+
     @MainActor
     private func updateLastMessage(with text: String) {
+        guard !messages.isEmpty else { return }
         messages[messages.count - 1].text = text
     }
     
