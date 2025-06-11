@@ -26,13 +26,21 @@ struct ContentView: View {
     @State private var model = SystemLanguageModel.default
     
     // Settings
-    @AppStorage("useStreaming") private var useStreaming = AppSettings.useStreaming
+    @AppStorage(
+        "useStreaming"
+    ) private var useStreaming = AppSettings.useStreaming
     @AppStorage("temperature") private var temperature = AppSettings.temperature
-    @AppStorage("systemInstructions") private var systemInstructions = AppSettings.systemInstructions
+    @AppStorage(
+        "systemInstructions"
+    ) private var systemInstructions = AppSettings.systemInstructions
     
     // Haptics
-    private let hapticButtonGenerator = UIImpactFeedbackGenerator(style: .medium)
+#if !os(visionOS)
+    private let hapticButtonGenerator = UIImpactFeedbackGenerator(
+        style: .medium
+    )
     private let hapticStreamGenerator = UISelectionFeedbackGenerator()
+#endif
     
     var body: some View {
         NavigationStack {
@@ -42,8 +50,11 @@ struct ContentView: View {
                     ScrollView {
                         VStack {
                             ForEach(messages) { message in
-                                MessageView(message: message, isResponding: isResponding)
-                                    .id(message.id)
+                                MessageView(
+                                    message: message,
+                                    isResponding: isResponding
+                                )
+                                .id(message.id)
                             }
                         }
                         .padding()
@@ -92,7 +103,8 @@ struct ContentView: View {
                 .frame(minHeight: 22)
                 .disabled(isResponding)
                 .onSubmit {
-                    if !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    if !inputText
+                        .trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         handleSendOrStop()
                     }
                 }
@@ -101,44 +113,71 @@ struct ContentView: View {
             HStack {
                 Spacer()
                 Button(action: handleSendOrStop) {
-                    Image(systemName: isResponding ? "stop.circle.fill" : "arrow.up.circle.fill")
-                        .font(.system(size: 30, weight: .bold))
-                        .foregroundStyle(isSendButtonDisabled ? Color.gray.opacity(0.6) : .primary)
+                    Image(
+                        systemName: isResponding ? "stop.circle.fill" : "arrow.up.circle.fill"
+                    )
+                    .font(.system(size: 30, weight: .bold))
+                    .foregroundStyle(
+                        isSendButtonDisabled ? Color.gray
+                            .opacity(0.6) : .primary
+                    )
                 }
                 .disabled(isSendButtonDisabled)
                 .animation(.easeInOut(duration: 0.2), value: isResponding)
-                .animation(.easeInOut(duration: 0.2), value: isSendButtonDisabled)
-                .glassEffect(.regular.interactive())
+                .animation(
+                    .easeInOut(duration: 0.2),
+                    value: isSendButtonDisabled
+                )
                 .padding(.trailing, 8)
+#if !os(visionOS)
+                .glassEffect(.regular.interactive())
+#else
+                .glassBackgroundEffect()
+#endif
             }
         }
+#if !os(visionOS)
         .glassEffect(.regular.interactive())
+#else
+        .glassBackgroundEffect()
+#endif
     }
     
     private var isSendButtonDisabled: Bool {
-        return inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isResponding
+        return inputText
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            ).isEmpty && !isResponding
     }
     
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .navigationBarLeading) {
-            Button(action: resetConversation) { Label("New Chat", systemImage: "square.and.pencil") }
+            Button(action: resetConversation) {
+                Label("New Chat", systemImage: "square.and.pencil")
+            }
         }
         ToolbarItem(placement: .navigationBarTrailing) {
-            Button(action: { showSettings = true }) { Label("Settings", systemImage: "gearshape") }
+            Button(action: { showSettings = true }) {
+                Label("Settings", systemImage: "gearshape")
+            }
         }
     }
     
     // MARK: - Model Interaction
     
     private func handleSendOrStop() {
+#if !os(visionOS)
         hapticButtonGenerator.impactOccurred()
+#endif
         
         if isResponding {
             stopStreaming()
         } else {
             guard model.isAvailable else {
-                showError(message: "The language model is not available. Reason: \(availabilityDescription(for: model.availability))")
+                showError(
+                    message: "The language model is not available. Reason: \(availabilityDescription(for: model.availability))"
+                )
                 return
             }
             sendMessage()
@@ -154,9 +193,9 @@ struct ContentView: View {
         
         // Add empty assistant message for streaming
         messages.append(ChatMessage(role: .assistant, text: ""))
-        
+#if !os(visionOS)
         hapticStreamGenerator.prepare()
-        
+#endif
         streamingTask = Task {
             do {
                 if session == nil { session = createSession() }
@@ -170,19 +209,29 @@ struct ContentView: View {
                 let options = GenerationOptions(temperature: temperature)
                 
                 if useStreaming {
-                    let stream = currentSession.streamResponse(to: prompt, options: options)
+                    let stream = currentSession.streamResponse(
+                        to: prompt,
+                        options: options
+                    )
                     for try await partialResponse in stream {
+#if !os(visionOS)
                         hapticStreamGenerator.selectionChanged()
+#endif
                         updateLastMessage(with: partialResponse)
                     }
                 } else {
-                    let response = try await currentSession.respond(to: prompt, options: options)
+                    let response = try await currentSession.respond(
+                        to: prompt,
+                        options: options
+                    )
                     updateLastMessage(with: response.content)
                 }
             } catch is CancellationError {
                 // User cancelled generation
             } catch {
-                showError(message: "An error occurred: \(error.localizedDescription)")
+                showError(
+                    message: "An error occurred: \(error.localizedDescription)"
+                )
             }
             
             isResponding = false
@@ -206,7 +255,9 @@ struct ContentView: View {
     }
     
     private func resetConversation() {
+#if !os(visionOS)
         hapticButtonGenerator.impactOccurred()
+#endif
         stopStreaming()
         messages.removeAll()
         session = nil
@@ -214,21 +265,21 @@ struct ContentView: View {
     
     private func availabilityDescription(for availability: SystemLanguageModel.Availability) -> String {
         switch availability {
-            case .available:
-                return "Available"
-            case .unavailable(let reason):
-                switch reason {
-                    case .deviceNotEligible:
-                        return "Device not eligible"
-                    case .appleIntelligenceNotEnabled:
-                        return "Apple Intelligence not enabled in Settings"
-                    case .modelNotReady:
-                        return "Model assets not downloaded"
-                    @unknown default:
-                        return "Unknown reason"
-                }
+        case .available:
+            return "Available"
+        case .unavailable(let reason):
+            switch reason {
+            case .deviceNotEligible:
+                return "Device not eligible"
+            case .appleIntelligenceNotEnabled:
+                return "Apple Intelligence not enabled in Settings"
+            case .modelNotReady:
+                return "Model assets not downloaded"
             @unknown default:
-                return "Unknown availability"
+                return "Unknown reason"
+            }
+        @unknown default:
+            return "Unknown availability"
         }
     }
     

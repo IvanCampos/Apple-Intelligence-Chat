@@ -35,7 +35,12 @@ struct MessageView: View {
                     .foregroundColor(.white)
                     .background(.blue)
                     .clipShape(.rect(cornerRadius: 18))
+#if !os(visionOS)
                     .glassEffect(in: .rect(cornerRadius: 18))
+#else
+                    .glassBackgroundEffect(in: .rect(cornerRadius: 18))
+#endif
+                    
                 
             } else {
                 VStack(alignment: .leading, spacing: 4) {
@@ -68,7 +73,9 @@ struct PulsingDotView: View {
                     .scaleEffect(isAnimating ? 1.0 : 0.5)
                     .opacity(isAnimating ? 1.0 : 0.3)
                     .animation(
-                        .easeInOut(duration: 0.6).repeatForever().delay(Double(index) * 0.2),
+                        .easeInOut(duration: 0.6)
+                        .repeatForever()
+                        .delay(Double(index) * 0.2),
                         value: isAnimating
                     )
             }
