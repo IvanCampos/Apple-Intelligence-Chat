@@ -1,6 +1,6 @@
 # Apple Intelligence Chat
 
-A SwiftUI app that allows you to chat with Apple Intelligence using the new [Foundation Models Framework](https://developer.apple.com/documentation/foundationmodels) and Liquid Glass UI on visionOS/iOS 26+.
+A SwiftUI app that allows you to chat with Apple Intelligence using the new [Foundation Models Framework](https://developer.apple.com/documentation/foundationmodels) and Liquid Glass UI on visionOS 26+.
 
 ![image](https://github.com/user-attachments/assets/6305de96-2c6a-4eaa-99ff-a923ad6be368)
 
@@ -13,7 +13,7 @@ A SwiftUI app that allows you to chat with Apple Intelligence using the new [Fou
 
 ## Requirements
 
-- iOS/iPadOS/MacOS/visionOS 26.0+
+- visionOS 26.0+
 - Device with Apple Intelligence support
 - Xcode 26.0 beta or newer
 
@@ -54,4 +54,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Acknowledgments
 
-Built with Apple's Foundation Models Framework and Liquid Glass UI for iOS 26.
+Built with Apple's Foundation Models Framework and Liquid Glass UI for visionOS 26.
